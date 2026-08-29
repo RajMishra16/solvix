@@ -1,6 +1,9 @@
 # Project Name: TeraWatt
 
-**Team:** Sujal, Aritra, Senria, Nik  
+## Live Site
+https://solvix-energy.vercel.app
+
+**Team:** Raj, Sumit, Shashank  
 **Track Chosen:** Renewables
 
 ## The Information Gap in Renewable Deployment
