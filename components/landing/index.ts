@@ -1,0 +1,6 @@
+export * from "./hero"
+export * from "./how-it-works"
+export * from "./stats-bar"
+export * from "./testimonials"
+export * from "./final-cta"
+export * from "./footer"
