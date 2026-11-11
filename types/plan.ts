@@ -87,6 +87,7 @@ export interface PlanAnalysis {
   systemSizeKw: number;
   annualProductionKwh: number;
   co2OffsetTons: number;
+  windSpeedMph?: number;
   equipmentPlacements: {
     equipmentId: string;
     position: Coordinates;

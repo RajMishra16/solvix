@@ -908,6 +908,7 @@ export default function AreaSelectPage() {
         systemSizeKw: analysisValues.systemSizeKw,
         annualProductionKwh: analysisValues.annualProductionKwh,
         co2OffsetTons: analysisValues.co2OffsetTons,
+        windSpeedMph: analysisValues.weather?.windSpeedMph,
         equipmentPlacements: equipmentPlacements.map(ep => ({
           equipmentId: ep.id,
           position: ep.position,
@@ -1119,12 +1120,16 @@ export default function AreaSelectPage() {
   const handleStartProspecting = useCallback(() => {
     setIsProspecting(true);
     setProspectedArea(null);
+    setVisibleOverlays(new Set());
+    setZoneLabels([]);
   }, []);
 
   const handleProspectComplete = useCallback((coords: PolygonCoordinates[]) => {
     setProspectedArea(coords);
     setIsProspecting(false);
-  }, []);
+    setVisibleOverlays(new Set(['solar', 'optimal']));
+    setZoneLabels(generateZoneLabels(coords));
+  }, [generateZoneLabels]);
 
   const handleProspectCancel = useCallback(() => {
     setIsProspecting(false);

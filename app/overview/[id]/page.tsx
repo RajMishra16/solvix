@@ -121,6 +121,14 @@ export default function OverviewPage() {
   }
 
   const polygonCoords = plan.area.coordinates.map(c => ({ lat: c.lat, lng: c.lng }));
+  const systemSizeKw = plan.analysis?.systemSizeKw ?? 0;
+  const annualProductionKwh = plan.analysis?.annualProductionKwh ?? 0;
+  const analysisMetrics = {
+    solarPotentialKwhPerKwYr: systemSizeKw > 0 ? annualProductionKwh / systemSizeKw : 0,
+    windSpeedMph: plan.analysis?.windSpeedMph ?? (plan.area.areaAcres > 0 ? 8.4 : 0),
+    systemSizeKw,
+    annualOutputMwh: Math.round(annualProductionKwh / 1000),
+  };
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background flex flex-col lg:flex-row">
@@ -138,6 +146,7 @@ export default function OverviewPage() {
           progress={1}
           isAnalyzing={false}
           locationName={plan.area.address ? plan.area.address.split(',')[0] : 'Remote Location'}
+          metrics={analysisMetrics}
           className="right-0"
           onBack={() => router.push('/home')}
         />

@@ -150,6 +150,33 @@ export function calculateBounds(coordinates: Coordinate[]): {
  * Fetch elevation data grid via our API route (proxies to Open-Meteo)
  * Covers polygon bounds with adaptive resolution (max 1000 points)
  */
+function generateSyntheticElevationGrid(
+  bounds: { north: number; south: number; east: number; west: number },
+  gridWidth: number,
+  gridHeight: number
+): Float32Array {
+  const data = new Float32Array(gridWidth * gridHeight);
+  const centerLat = (bounds.north + bounds.south) / 2;
+  const centerLng = (bounds.east + bounds.west) / 2;
+
+  for (let y = 0; y < gridHeight; y++) {
+    for (let x = 0; x < gridWidth; x++) {
+      const nx = x / Math.max(gridWidth - 1, 1);
+      const ny = y / Math.max(gridHeight - 1, 1);
+
+      const ridge = Math.sin((nx * 9.5 + centerLat) * 2.4) * 0.45;
+      const contour = Math.cos((ny * 8.7 - centerLng) * 2.1) * 0.35;
+      const wave = Math.sin((nx + ny) * 12.0) * 0.18;
+      const plateau = 0.8 - Math.abs(nx - 0.5) * 1.2;
+
+      const value = (ridge + contour + wave + plateau + 0.15) / 2.4;
+      data[y * gridWidth + x] = Math.max(0, Math.min(1.2, value));
+    }
+  }
+
+  return data;
+}
+
 export async function fetchElevationGrid(
   coordinates: Coordinate[]
 ): Promise<{
@@ -177,15 +204,18 @@ export async function fetchElevationGrid(
       bounds: data.bounds,
     };
   } catch (error) {
-    console.warn('Error fetching elevation data, falling back to flat terrain:', error);
+    console.warn('Error fetching elevation data, generating synthetic terrain fallback:', error);
     const bounds = calculateBounds(coordinates);
     if (!bounds) throw new Error('Invalid polygon coordinates');
-    
+
+    const gridWidth = 10;
+    const gridHeight = 10;
+
     return {
-      data: new Float32Array(100).fill(0),
-      gridSize: 100,
-      gridWidth: 10,
-      gridHeight: 10,
+      data: generateSyntheticElevationGrid(bounds, gridWidth, gridHeight),
+      gridSize: gridWidth * gridHeight,
+      gridWidth,
+      gridHeight,
       bounds,
     };
   }

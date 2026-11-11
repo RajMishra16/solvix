@@ -58,11 +58,18 @@ export async function POST(request: NextRequest) {
         
         const res = await fetch(url);
         if (!res.ok) {
-          console.error('Open-Meteo error:', res.status);
-          return { chunk, elevations: chunk.map(() => 0) };
+          throw new Error(`Open-Meteo returned ${res.status}`);
         }
         
         const data = await res.json();
+        if (
+          !Array.isArray(data.elevation) ||
+          data.elevation.length !== chunk.length ||
+          data.elevation.some((value: unknown) => typeof value !== 'number' || !Number.isFinite(value))
+        ) {
+          throw new Error('Open-Meteo returned invalid elevation data');
+        }
+
         return { chunk, elevations: data.elevation as number[] };
       })
     );
@@ -86,7 +93,7 @@ export async function POST(request: NextRequest) {
     console.error('Elevation API error:', error);
     return new Response(
       JSON.stringify({ error: 'Failed to fetch elevation data' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 502, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

@@ -54,10 +54,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 body: JSON.stringify({ email, password }),
             });
 
-            const data = await response.json();
+            const text = await response.text();
+            let data: any = {};
+
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    data = { error: 'Authentication service is unavailable. Please try again later.' };
+                }
+            }
 
             if (!response.ok) {
-                return { success: false, error: data.error };
+                return { success: false, error: data.error || 'Authentication service is unavailable. Please try again later.' };
             }
 
             setIsAuthenticated(true);
@@ -65,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return { success: true };
         } catch (error) {
             console.error('Login error:', error);
-            return { success: false, error: 'An unexpected error occurred' };
+            return { success: false, error: 'Authentication service is unavailable. Please try again later.' };
         }
     }, []);
 
@@ -77,10 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 body: JSON.stringify({ email, password, name }),
             });
 
-            const data = await response.json();
+            const text = await response.text();
+            let data: any = {};
+
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    data = { error: 'Authentication service is unavailable. Please try again later.' };
+                }
+            }
 
             if (!response.ok) {
-                return { success: false, error: data.error };
+                return { success: false, error: data.error || 'Authentication service is unavailable. Please try again later.' };
             }
 
             if (data.requiresLogin) {
@@ -92,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return { success: true };
         } catch (error) {
             console.error('Signup error:', error);
-            return { success: false, error: 'An unexpected error occurred' };
+            return { success: false, error: 'Authentication service is unavailable. Please try again later.' };
         }
     }, []);
 
