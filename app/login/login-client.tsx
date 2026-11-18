@@ -12,14 +12,16 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { AuthLayout } from "@/components/auth/auth-layout"
-import { useAuth } from "@/lib/auth0-provider"
+import { useAuth } from "@/lib/auth-provider"
 
-export default function LoginClient() {
+export default function LoginClient({ authError }: { authError?: boolean }) {
   const router = useRouter()
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { login, signInWithGoogle, isAuthenticated, isLoading: authLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    authError ? 'Google sign-in failed. Please try again or use your email and password.' : null
+  )
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
@@ -46,20 +48,13 @@ export default function LoginClient() {
   }
 
   async function handleGoogleSignIn() {
-    // Redirect to Auth0 authorize endpoint for Google OAuth
-    const domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
-    const clientId = process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID;
-    const redirectUri = `${window.location.origin}/api/auth/callback`;
-
-    const authUrl = `https://${domain}/authorize?` + new URLSearchParams({
-      response_type: 'code',
-      client_id: clientId || '',
-      redirect_uri: redirectUri,
-      scope: 'openid profile email',
-      connection: 'google-oauth2',
-    }).toString();
-
-    window.location.href = authUrl;
+    setIsLoading(true)
+    setError(null)
+    const result = await signInWithGoogle()
+    if (!result.success) {
+      setError(result.error || 'Google sign-in failed')
+      setIsLoading(false)
+    }
   }
 
   if (authLoading) {
@@ -106,7 +101,7 @@ export default function LoginClient() {
             variant="outline"
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
             className="w-full relative h-10 gap-2 font-normal text-muted-foreground hover:text-foreground"
           >
             <svg role="img" viewBox="0 0 24 24" className="h-4 w-4">
@@ -138,7 +133,7 @@ export default function LoginClient() {
                   autoCapitalize="none"
                   autoComplete="email"
                   autoCorrect="off"
-                  disabled={isLoading}
+                  disabled={isLoading || authLoading}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"
@@ -179,7 +174,7 @@ export default function LoginClient() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Checkbox id="remember" disabled={isLoading} />
+                <Checkbox id="remember" disabled={isLoading || authLoading} />
                 <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
                   Remember me
                 </Label>
@@ -192,7 +187,7 @@ export default function LoginClient() {
               </Link>
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full mt-2 font-semibold">
+            <Button type="submit" disabled={isLoading || authLoading} className="w-full mt-2 font-semibold">
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

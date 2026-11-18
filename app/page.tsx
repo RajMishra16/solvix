@@ -1,12 +1,11 @@
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Hero, HowItWorks, StatsBar, Testimonials, FinalCTA, Footer } from "@/components/landing"
+import { createClient } from '@/lib/supabase/server';
 
 export default async function Page() {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get('Solvix_auth');
-
-  if (authCookie) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
     redirect('/home');
   }
 

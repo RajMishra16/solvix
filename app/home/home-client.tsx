@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { usePlanStore } from '@/stores/plan-store';
 import { useUIStore } from '@/stores/ui-store';
-import { useAuth } from '@/lib/auth0-provider';
+import { useAuth } from '@/lib/auth-provider';
 import { AppShell } from '@/components/layout/app-shell';
 import { PageTransition } from '@/components/layout/page-transition';
 import { Button } from '@/components/ui/button';

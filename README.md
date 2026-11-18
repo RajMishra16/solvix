@@ -29,3 +29,21 @@ TeraWatt is an intelligent, location-aware energy simulator that democratizes re
 *   **Scenario Modeling:** The system calculates and compares scenarios, such as "Maximum Theoretical Output" vs. "Cost-Optimized Build," providing detailed CAPEX vs. Yield breakdowns.
 *   **Comprehensive Plan Analysis:** Delivers granular breakdowns of Production (monthly/daily), Financials (ROI, Payback, Tax Credits), and Environmental Impact (CO2 offsets, equivalencies), ensuring total transparency for investment decisions.
 *   **Verified Metric Certification:** Automatically cross-references simulation data with utility-scale standards to provide certified, bankable reports.
+
+## Authentication setup
+
+Email/password and Google sign-in both use Supabase Auth. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from the Supabase project's API settings. Restart the Next.js server after changing environment variables.
+
+To enable Google sign-in:
+
+1. In Google Cloud Console, configure the OAuth consent screen (add your account as a test user while the app is in testing) and create an OAuth client with application type **Web application**.
+2. In Supabase, open **Authentication → Sign In / Providers → Google**, enable Google, and enter the Google OAuth client ID and client secret.
+3. In Supabase **Authentication → URL Configuration**, set the Site URL to your production origin (for this project: `https://solvix-energy.vercel.app`). Add these Redirect URLs:
+   - `http://localhost:3000/**` for local development.
+   - `https://solvix-energy.vercel.app/**` for production. If you use another Vercel deployment or a custom domain, add its origin with `/**` too.
+4. Copy the Supabase project's callback URL shown in the Google provider settings (typically `https://<project-ref>.supabase.co/auth/v1/callback`) into the Google OAuth client's **Authorized redirect URIs**. This is the Supabase callback, not the app's `/api/auth/callback` route.
+5. Save both dashboards and restart the local Next.js server if you changed app environment variables. The Google client secret belongs only in Supabase; do not put it in `NEXT_PUBLIC_*` variables or commit it.
+
+The app sends users back through `/api/auth/callback`, which exchanges Supabase's authorization code for a session and redirects them to `/home`. Test locally at `http://localhost:3000/login`; for production, use the deployed site's `/login`. Google OAuth can be limited to consent-screen test users until the Google app is published.
+
+Email confirmation is enabled according to the Supabase project's Auth settings. New users must confirm their email before email/password sign-in. Supabase's built-in email service has strict sending limits; configure a custom SMTP provider in the Supabase dashboard if signup or password-reset emails are rate-limited.

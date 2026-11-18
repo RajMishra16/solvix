@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { AuthProvider } from '@/lib/auth0-provider';
+import { AuthProvider } from '@/lib/auth-provider';
 
 interface ProvidersProps {
   children: ReactNode;

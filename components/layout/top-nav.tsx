@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Leaf, LogOut, Settings, HelpCircle } from 'lucide-react';
-import { useAuth } from '@/lib/auth0-provider';
+import { useAuth } from '@/lib/auth-provider';
 
 import {
   DropdownMenu,

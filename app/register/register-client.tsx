@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { AuthLayout } from "@/components/auth/auth-layout"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/lib/auth0-provider"
+import { useAuth } from "@/lib/auth-provider"
 
 function getPasswordStrength(password: string) {
   let score = 0;
@@ -34,9 +34,9 @@ function getPasswordStrength(password: string) {
   };
 }
 
-export default function RegisterClient() {
+export default function RegisterClient({ authError }: { authError?: boolean }) {
   const router = useRouter()
-  const { signup, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { signup, signInWithGoogle, isAuthenticated, isLoading: authLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -45,7 +45,10 @@ export default function RegisterClient() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    authError ? 'Google sign-in failed. Please try again or use your email and password.' : null
+  )
+  const [notice, setNotice] = useState<string | null>(null)
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password])
   const passwordsMatch = password === confirmPassword && confirmPassword.length > 0
@@ -65,6 +68,11 @@ export default function RegisterClient() {
       return
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
     if (!agreedToTerms) {
       setError('Please agree to the terms of service')
       return
@@ -72,11 +80,17 @@ export default function RegisterClient() {
 
     setIsLoading(true)
     setError(null)
+    setNotice(null)
 
     const result = await signup(email, password, name)
 
     if (result.success) {
-      router.push('/home')
+      if (result.requiresEmailConfirmation) {
+        setNotice('Account created. Check your email to confirm your address before signing in.')
+        setIsLoading(false)
+      } else {
+        router.push('/home')
+      }
     } else {
       setError(result.error || 'Signup failed')
       setIsLoading(false)
@@ -84,26 +98,13 @@ export default function RegisterClient() {
   }
 
   async function handleGoogleSignUp() {
-    // Redirect to Auth0 authorize endpoint for Google OAuth
-    const domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN;
-    const clientId = process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID;
-
-    // Ensure we are using the origin from the browser window
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const redirectUri = `${origin}/api/auth/callback`;
-
-    console.log('Redirecting to Auth0 with URI:', redirectUri);
-
-    const authUrl = `https://${domain}/authorize?` + new URLSearchParams({
-      response_type: 'code',
-      client_id: clientId || '',
-      redirect_uri: redirectUri,
-      scope: 'openid profile email',
-      connection: 'google-oauth2',
-      screen_hint: 'signup',
-    }).toString();
-
-    window.location.href = authUrl;
+    setIsLoading(true)
+    setError(null)
+    const result = await signInWithGoogle()
+    if (!result.success) {
+      setError(result.error || 'Google sign-in failed')
+      setIsLoading(false)
+    }
   }
 
   if (authLoading) {
@@ -145,12 +146,18 @@ export default function RegisterClient() {
           </div>
         )}
 
+        {notice && (
+          <div className="rounded-md bg-emerald-500/10 p-3 text-center text-sm text-emerald-700">
+            {notice}
+          </div>
+        )}
+
         <div className="grid gap-4">
           <Button
             variant="outline"
             type="button"
             onClick={handleGoogleSignUp}
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
             className="w-full relative h-10 gap-2 font-normal text-muted-foreground hover:text-foreground"
           >
             <svg role="img" viewBox="0 0 24 24" className="h-4 w-4">
@@ -223,6 +230,7 @@ export default function RegisterClient() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-9 pr-9"
+                  minLength={6}
                   required
                 />
                 <button
